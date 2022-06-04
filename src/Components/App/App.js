@@ -65,6 +65,11 @@ class App extends React.Component {
     });
   }
 
+  // Get Spotify access token first time app loads
+  componentDidMount() {
+    window.addEventListener('load', () => Spotify.getAccessToken());
+  }
+
   render() {
     return (
       <div>
