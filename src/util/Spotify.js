@@ -1,7 +1,7 @@
 import secrets from './secrets.js';
 
 const clientId = secrets.clientId;
-const redirectURI = 'http://localhost:3000/';
+const redirectURI = 'http://capstonejamming.surge.sh';
 let userAccessToken;
 
 const Spotify = {
