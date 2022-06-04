@@ -10,7 +10,7 @@ class App extends React.Component {
     super(props);
     this.state = {
       searchResults: [],
-      playlistName: 'My playlist',
+      playlistName: 'New Playlist',
       playlistTracks: []
     };
     this.addTrack = this.addTrack.bind(this);
@@ -53,7 +53,6 @@ class App extends React.Component {
         playlistName: 'New Playlist',
         playlistTracks: []
       })
-      document.querySelectorAll('input')[1].value = 'New Playlist';
     })
   }
 
