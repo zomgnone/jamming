@@ -26,6 +26,8 @@ const Spotify = {
     }
   },
 
+  // Search for tracks with Spotify API
+  // https://developer.spotify.com/documentation/web-api/reference/#/operations/search
   search(term) {
     const accessToken = Spotify.getAccessToken();
 
@@ -37,6 +39,9 @@ const Spotify = {
 
     return fetch(`https://api.spotify.com/v1/search?type=track&q=${encodeURIComponent(term)}`, fetchParams
     ).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not OK while fetching track');
+      }
       return response.json();
     }).then(jsonResponse => {
       if (!jsonResponse.tracks) {
@@ -49,9 +54,12 @@ const Spotify = {
         id: track.id,
         uri: track.uri
       }));
+    }).catch(error => {
+      console.error('There has been a problem with your fetch operation', error);
     });
   },
 
+  // Get user ID, create new playlist and add tracks to it.
   savePlaylist(playlistName, trackURIs) {
     if (!playlistName || !trackURIs.length) {
       return;
@@ -60,16 +68,58 @@ const Spotify = {
     const accessToken = Spotify.getAccessToken();
     const headers = { Authorization: `Bearer ${accessToken}` };
     let userId;
+    let playlistId;
 
+    // Get user ID
+    // https://developer.spotify.com/documentation/web-api/reference/#/operations/get-current-users-profile
     return fetch('https://api.spotify.com/v1/me', { headers: headers }
     ).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not OK while fetching user data');
+      }
       return response.json();
     }).then(jsonResponse => {
       userId = jsonResponse.id;
-      return fetch(``, {})
-    });
 
-  }
+      // Create new playlist
+      // https://developer.spotify.com/documentation/web-api/reference/#/operations/create-playlist
+      return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+        headers: headers,
+        method: 'POST',
+        body: JSON.stringify({
+          name: playlistName,
+          description: 'jammmer playlist'
+        })
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not OK while POSTing new playlist');
+        }
+        return response.json()
+      }).then(jsonResponse => {
+          playlistId = jsonResponse.id;
+
+          // Add tracks to created playlist
+          // https://developer.spotify.com/documentation/web-api/reference/#/operations/add-tracks-to-playlist
+          return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            headers: headers,
+            method: 'POST',
+            body: JSON.stringify({
+              uris: trackURIs
+            })
+          }).then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not OK while POSTing tracks to playlist');
+            }
+            return response.json();
+          }).then(jsonResponse => {
+            playlistId = jsonResponse.snapshot_id;
+            return playlistId;
+          }).catch(error => {
+            console.error('There has been a problem with your fetch operation', error);
+          });
+       })
+    })
+    }
 };
 
 
