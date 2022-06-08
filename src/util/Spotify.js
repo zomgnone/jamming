@@ -1,8 +1,9 @@
 import secrets from './secrets.js';
 
 const clientId = secrets.clientId;
-const redirectURI = 'http://capstonejamming.surge.sh';
+const redirectURI = 'http://localhost:3000/';
 let userAccessToken;
+let userId;
 
 const Spotify = {
   getAccessToken() {
@@ -59,30 +60,40 @@ const Spotify = {
     });
   },
 
+  // Get user ID
+  // https://developer.spotify.com/documentation/web-api/reference/#/operations/get-current-users-profile
+  getCurrentUserId() {
+    if (userId) {
+      return new Promise((resolve) => {
+        resolve(userId);
+      });
+    }
+
+    let accessToken = Spotify.getAccessToken();
+    let headers = { Authorization: `Bearer ${accessToken}` };
+    return fetch('https://api.spotify.com/v1/me', { headers: headers }
+    ).then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not OK while fetching user data');
+      }
+      return response.json();
+    }).then((jsonResponse) => {
+      return jsonResponse.id;
+    })
+  },
+
   // Get user ID, create new playlist and add tracks to it.
   savePlaylist(playlistName, trackURIs) {
     if (!playlistName || !trackURIs.length) {
       return;
     }
 
-    const accessToken = Spotify.getAccessToken();
-    const headers = { Authorization: `Bearer ${accessToken}` };
-    let userId;
+    let accessToken = Spotify.getAccessToken();
+    let headers = { Authorization: `Bearer ${accessToken}` };
     let playlistId;
 
-    // Get user ID
-    // https://developer.spotify.com/documentation/web-api/reference/#/operations/get-current-users-profile
-    return fetch('https://api.spotify.com/v1/me', { headers: headers }
-    ).then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not OK while fetching user data');
-      }
-      return response.json();
-    }).then(jsonResponse => {
-      userId = jsonResponse.id;
-
-      // Create new playlist
-      // https://developer.spotify.com/documentation/web-api/reference/#/operations/create-playlist
+    return Spotify.getCurrentUserId().then(result => {
+      userId = result;
       return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
         headers: headers,
         method: 'POST',
@@ -94,33 +105,32 @@ const Spotify = {
         if (!response.ok) {
           throw new Error('Network response was not OK while POSTing new playlist');
         }
-        return response.json()
+        return response.json();
       }).then(jsonResponse => {
-          playlistId = jsonResponse.id;
+        playlistId = jsonResponse.id;
 
-          // Add tracks to created playlist
-          // https://developer.spotify.com/documentation/web-api/reference/#/operations/add-tracks-to-playlist
-          return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            headers: headers,
-            method: 'POST',
-            body: JSON.stringify({
-              uris: trackURIs
-            })
-          }).then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not OK while POSTing tracks to playlist');
-            }
-            return response.json();
-          }).then(jsonResponse => {
-            playlistId = jsonResponse.snapshot_id;
-            return playlistId;
-          }).catch(error => {
-            console.error('There has been a problem with your fetch operation', error);
-          });
-       })
-    })
-    }
+        // Add tracks to created playlist
+        // https://developer.spotify.com/documentation/web-api/reference/#/operations/add-tracks-to-playlist
+        return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+          headers: headers,
+          method: 'POST',
+          body: JSON.stringify({
+            uris: trackURIs
+          })
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not OK while POSTing tracks to playlist');
+          }
+          return response.json();
+        }).then(jsonResponse => {
+          playlistId = jsonResponse.snapshot_id;
+          return playlistId;
+        }).catch(error => {
+          console.error('There has been a problem with your fetch operation', error);
+        });
+      })
+    });
+  }
 };
-
 
 export default Spotify;
