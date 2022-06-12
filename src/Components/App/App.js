@@ -13,21 +13,14 @@ class App extends React.Component {
       searchResults: [],
       playlistName: 'New Playlist',
       playlistTracks: [],
-      playlistListItems: [
-        {playlistid: 1, name: 'Playist1'},
-        {playlistid: 2, name: 'Playist2'},
-        {playlistid: 3, name: 'Playist3'},
-        {playlistid: 4, name: 'Playist4'},
-        {playlistid: 5, name: 'Playist5'},
-        {playlistid: 6, name: 'Playist6'},
-        {playlistid: 7, name: 'Playist7'}
-      ]
+      playlistListItems: []
     };
     this.addTrack = this.addTrack.bind(this);
     this.removeTrack = this.removeTrack.bind(this);
     this.updatePlaylistName = this.updatePlaylistName.bind(this);
     this.savePlaylist = this.savePlaylist.bind(this);
     this.search = this.search.bind(this);
+    this.getPlaylists = this.getPlaylists.bind(this);
   }
 
   addTrack(track) {
@@ -78,6 +71,14 @@ class App extends React.Component {
   componentDidMount() {
     window.addEventListener('load', () => Spotify.getAccessToken());
   }
+  
+  getPlaylists() {
+    Spotify.getUserPlaylists().then(playlistList => {
+      this.setState({
+        playlistListItems: playlistList
+      });
+    });
+  }
 
   render() {
     return (
@@ -93,7 +94,8 @@ class App extends React.Component {
                       onRemove={this.removeTrack}
                       onNameChange={this.updatePlaylistName}
                       onSave={this.savePlaylist} />
-            <PlaylistList playlistListItems={this.state.playlistListItems} />
+            <PlaylistList playlistListItems={this.state.playlistListItems} 
+                          onGet={this.getPlaylists} />
           </div>
         </div>
       </div>

@@ -130,6 +130,30 @@ const Spotify = {
         });
       })
     });
+  },
+
+  getUserPlaylists() {
+    let accessToken = Spotify.getAccessToken();
+    let headers = { Authorization: `Bearer ${accessToken}` };
+
+    return Spotify.getCurrentUserId().then(result => {
+      userId = result;
+      return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, { headers: headers }
+      ).then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not OK while retrieving user playlists');
+        }
+        return response.json();
+      }).then(jsonResponse => {
+        return jsonResponse.items.map((item, index) => ({
+          playlistId: item.id,
+          name: item.name,
+          id: index
+        }));
+      }).catch(error => {
+        console.error('There has been a problem with your fetch operation', error);
+      });
+    });
   }
 };
 
