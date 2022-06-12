@@ -132,6 +132,7 @@ const Spotify = {
     });
   },
 
+  // Get current user ID, retrieve user-made playlists.
   getUserPlaylists() {
     let accessToken = Spotify.getAccessToken();
     let headers = { Authorization: `Bearer ${accessToken}` };
@@ -153,6 +154,30 @@ const Spotify = {
       }).catch(error => {
         console.error('There has been a problem with your fetch operation', error);
       });
+    });
+  },
+
+  // Retrieve the playlist with the provided ID.
+  getPlaylist(playlistId) {
+    let accessToken = Spotify.getAccessToken();
+    let headers = { Authorization: `Bearer ${accessToken}` };
+
+    return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, { headers: headers }
+    ).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not OK while retrieving playlist tracks');
+      }
+      return response.json();
+    }).then(jsonResponse => {
+      return jsonResponse.items.map(item => ({
+        name: item.track.name,
+        artist: item.track.artists[0].name,
+        album: item.track.album.name,
+        id: item.track.id,
+        uri: item.track.uri
+      }));
+    }).catch(error => {
+      console.error('There has been a problem with your fetch operation', error);
     });
   }
 };

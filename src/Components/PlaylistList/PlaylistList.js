@@ -10,7 +10,7 @@ class PlaylistList extends React.Component {
         <button className="PlaylistList-get" onClick={this.props.onGet}>GET PLAYLISTS</button>
         {
           this.props.playlistListItems.map(item => {
-            return <PlaylistListItem name={item.name} key={item.id} />;
+            return <PlaylistListItem name={item.name} key={item.id} playlistId={item.playlistId} onSelect={this.props.onSelect}/>;
           })
         }
       </div>
