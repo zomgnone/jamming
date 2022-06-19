@@ -83,7 +83,7 @@ const Spotify = {
   },
 
   // Get user ID, create new playlist and add tracks to it.
-  savePlaylist(playlistName, trackURIs) {
+  savePlaylist(playlistName, trackURIs, id) {
     if (!playlistName || !trackURIs.length) {
       return;
     }
@@ -92,6 +92,41 @@ const Spotify = {
     let headers = { Authorization: `Bearer ${accessToken}` };
     let playlistId;
 
+    if (id) {
+      playlistId = id;
+      fetch(`https://api.spotify.com/v1/playlists/${playlistId}`, {
+        headers: headers,
+        method: 'PUT',
+        body: JSON.stringify({
+          name: playlistName
+        })
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not OK while updating playlist name');
+        }
+      }).catch(error => {
+        console.error('there has been a problem with your fetch operation', error);
+      });
+      // Add tracks to created playlist
+      // https://developer.spotify.com/documentation/web-api/reference/#/operations/add-tracks-to-playlist
+      return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+        headers: headers,
+        method: 'PUT',
+        body: JSON.stringify({
+          uris: trackURIs
+        })
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not OK while POSTing tracks to playlist');
+        }
+        return response.json();
+      }).then(jsonResponse => {
+        playlistId = jsonResponse.snapshot_id;
+        return playlistId;
+      }).catch(error => {
+        console.error('There has been a problem with your fetch operation', error);
+      });
+  } else {
     return Spotify.getCurrentUserId().then(result => {
       userId = result;
       return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
@@ -130,7 +165,8 @@ const Spotify = {
         });
       })
     });
-  },
+  }
+},
 
   // Get current user ID, retrieve user-made playlists.
   getUserPlaylists() {
@@ -157,29 +193,29 @@ const Spotify = {
     });
   },
 
-  // Retrieve the playlist with the provided ID.
-  getPlaylist(playlistId) {
-    let accessToken = Spotify.getAccessToken();
-    let headers = { Authorization: `Bearer ${accessToken}` };
+    // Retrieve the playlist with the provided ID.
+    getPlaylist(playlistId) {
+  let accessToken = Spotify.getAccessToken();
+  let headers = { Authorization: `Bearer ${accessToken}` };
 
-    return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, { headers: headers }
-    ).then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not OK while retrieving playlist tracks');
-      }
-      return response.json();
-    }).then(jsonResponse => {
-      return jsonResponse.items.map(item => ({
-        name: item.track.name,
-        artist: item.track.artists[0].name,
-        album: item.track.album.name,
-        id: item.track.id,
-        uri: item.track.uri
-      }));
-    }).catch(error => {
-      console.error('There has been a problem with your fetch operation', error);
-    });
-  }
+  return fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, { headers: headers }
+  ).then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not OK while retrieving playlist tracks');
+    }
+    return response.json();
+  }).then(jsonResponse => {
+    return jsonResponse.items.map(item => ({
+      name: item.track.name,
+      artist: item.track.artists[0].name,
+      album: item.track.album.name,
+      id: item.track.id,
+      uri: item.track.uri
+    }));
+  }).catch(error => {
+    console.error('There has been a problem with your fetch operation', error);
+  });
+}
 };
 
 export default Spotify;

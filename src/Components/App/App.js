@@ -13,7 +13,8 @@ class App extends React.Component {
       searchResults: [],
       playlistName: 'New Playlist',
       playlistTracks: [],
-      playlistListItems: []
+      playlistListItems: [],
+      playlistId: null
     };
     this.addTrack = this.addTrack.bind(this);
     this.removeTrack = this.removeTrack.bind(this);
@@ -52,11 +53,13 @@ class App extends React.Component {
 
   savePlaylist() {
     const trackURIs = this.state.playlistTracks.map(track => track.uri);
-    Spotify.savePlaylist(this.state.playlistName, trackURIs).then(() => {
+    Spotify.savePlaylist(this.state.playlistName, trackURIs, this.state.playlistId).then(() => {
       this.setState({
         playlistName: 'New Playlist',
-        playlistTracks: []
-      })
+        playlistTracks: [],
+        playlistId: null
+      });
+      this.getPlaylists();
     })
   }
 
@@ -82,11 +85,12 @@ class App extends React.Component {
   }
 
   selectPlaylist(id) {
-    const selectedPlaylistName = this.state.playlistListItems.find(item => item.playlistId === id).name
+    const selectedPlaylistName = this.state.playlistListItems.find(item => item.playlistId === id).name;
     Spotify.getPlaylist(id).then(tracks => {
       this.setState({
         playlistName: selectedPlaylistName,
-        playlistTracks: tracks
+        playlistTracks: tracks,
+        playlistId: id
       });
     });
   }
