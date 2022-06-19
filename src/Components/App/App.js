@@ -3,6 +3,7 @@ import React from 'react';
 import SearchBar from '../SearchBar/SearchBar';
 import SearchResults from '../SearchResults/SearchResults';
 import Playlist from '../Playlist/Playlist';
+import PlaylistList from '../PlaylistList/PlaylistList';
 import Spotify from '../../util/Spotify';
 
 class App extends React.Component {
@@ -11,13 +12,17 @@ class App extends React.Component {
     this.state = {
       searchResults: [],
       playlistName: 'New Playlist',
-      playlistTracks: []
+      playlistTracks: [],
+      playlistListItems: [],
+      playlistId: null
     };
     this.addTrack = this.addTrack.bind(this);
     this.removeTrack = this.removeTrack.bind(this);
     this.updatePlaylistName = this.updatePlaylistName.bind(this);
     this.savePlaylist = this.savePlaylist.bind(this);
     this.search = this.search.bind(this);
+    this.getPlaylists = this.getPlaylists.bind(this);
+    this.selectPlaylist = this.selectPlaylist.bind(this);
   }
 
   addTrack(track) {
@@ -48,11 +53,13 @@ class App extends React.Component {
 
   savePlaylist() {
     const trackURIs = this.state.playlistTracks.map(track => track.uri);
-    Spotify.savePlaylist(this.state.playlistName, trackURIs).then(() => {
+    Spotify.savePlaylist(this.state.playlistName, trackURIs, this.state.playlistId).then(() => {
       this.setState({
         playlistName: 'New Playlist',
-        playlistTracks: []
-      })
+        playlistTracks: [],
+        playlistId: null
+      });
+      this.getPlaylists();
     })
   }
 
@@ -67,6 +74,25 @@ class App extends React.Component {
   // Get Spotify access token first time app loads
   componentDidMount() {
     window.addEventListener('load', () => Spotify.getAccessToken());
+  }
+  
+  getPlaylists() {
+    Spotify.getUserPlaylists().then(playlistList => {
+      this.setState({
+        playlistListItems: playlistList
+      });
+    });
+  }
+
+  selectPlaylist(id) {
+    const selectedPlaylistName = this.state.playlistListItems.find(item => item.playlistId === id).name;
+    Spotify.getPlaylist(id).then(tracks => {
+      this.setState({
+        playlistName: selectedPlaylistName,
+        playlistTracks: tracks,
+        playlistId: id
+      });
+    });
   }
 
   render() {
@@ -83,6 +109,9 @@ class App extends React.Component {
                       onRemove={this.removeTrack}
                       onNameChange={this.updatePlaylistName}
                       onSave={this.savePlaylist} />
+            <PlaylistList playlistListItems={this.state.playlistListItems} 
+                          onGet={this.getPlaylists} 
+                          onSelect={this.selectPlaylist} />
           </div>
         </div>
       </div>
